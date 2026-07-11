@@ -9,4 +9,4 @@
 - [x] Build the interactive deterministic graph viewer.
 - [x] Export the sanitized Whisper MCP example.
 - [x] Pass unit, protocol, determinism, privacy, smoke, and browser checks.
-- [ ] Record Valtor gates, commit, and push only Cartograph.
+- [x] Record Valtor gates, commit, and push only Cartograph.
