@@ -1,0 +1,4 @@
+interface:
+  display_name: "Cartograph Bootstrap"
+  short_description: "Inject shared context and codebase graph state"
+  default_prompt: "Use $cartograph-bootstrap to orient this task from Whisper and Cartograph before making changes."

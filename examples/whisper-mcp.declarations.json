@@ -1,0 +1,38 @@
+{
+  "nodes": [
+    {
+      "id": "client:claude-code",
+      "kind": "client",
+      "label": "Claude Code",
+      "required": false
+    },
+    {
+      "id": "client:codex",
+      "kind": "client",
+      "label": "Codex",
+      "required": false
+    },
+    {
+      "id": "database:whisper-context",
+      "kind": "database",
+      "label": "Whisper context state",
+      "required": false
+    },
+    {
+      "id": "expected:runtime-evidence",
+      "kind": "expected",
+      "label": "Runtime call evidence",
+      "expectation": "A later runtime-tracing extractor should bind MCP calls to graph digests."
+    }
+  ],
+  "edges": [
+    {"source": "client:claude-code", "target": "mcp:mcp_whisper_context.server:mcp", "kind": "connects_to"},
+    {"source": "client:claude-code", "target": "mcp:mcp_whisper_dual.server:mcp", "kind": "connects_to"},
+    {"source": "client:codex", "target": "mcp:mcp_whisper_context.server:mcp", "kind": "connects_to"},
+    {"source": "client:codex", "target": "mcp:mcp_whisper_dual.server:mcp", "kind": "connects_to"},
+    {"source": "mcp:mcp_whisper_context.server:mcp", "target": "database:whisper-context", "kind": "persists_to"},
+    {"source": "mcp:mcp_whisper_dual.server:mcp", "target": "database:whisper-context", "kind": "reads_context"},
+    {"source": "mcp:mcp_whisper_context.server:mcp", "target": "expected:runtime-evidence", "kind": "should_emit"},
+    {"source": "mcp:mcp_whisper_dual.server:mcp", "target": "expected:runtime-evidence", "kind": "should_emit"}
+  ]
+}

@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Cartograph</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header>
+    <div>
+      <p class="eyebrow">Evidence-bound codebase map</p>
+      <h1>Cartograph</h1>
+    </div>
+    <label class="file-button">Open graph<input id="file-input" type="file" accept="application/json,.json"></label>
+  </header>
+  <main>
+    <section class="toolbar" aria-label="Graph controls">
+      <label>Status
+        <select id="status-filter">
+          <option value="all">All</option>
+          <option value="gray">Unknown</option>
+          <option value="green">Passing</option>
+          <option value="yellow">Warning</option>
+          <option value="red">Broken</option>
+        </select>
+      </label>
+      <label><input id="gaps-only" type="checkbox"> Gaps only</label>
+      <label><input id="plague-only" type="checkbox"> Structural plague only</label>
+      <output id="summary" aria-live="polite"></output>
+    </section>
+    <div class="legend" aria-label="Status legend">
+      <span><i class="dot gray"></i>unknown</span>
+      <span><i class="dot green"></i>passing evidence</span>
+      <span><i class="dot yellow"></i>warning</span>
+      <span><i class="dot red"></i>broken</span>
+      <span><i class="ring"></i>structural plague</span>
+    </div>
+    <section class="workspace">
+      <div class="map-frame">
+        <svg id="graph" role="img" aria-labelledby="graph-title graph-description">
+          <title id="graph-title">Codebase dependency graph</title>
+          <desc id="graph-description">Nodes are arranged in stable semantic lanes. Select a node for evidence details.</desc>
+        </svg>
+        <p id="empty" hidden>No nodes match these filters.</p>
+      </div>
+      <aside id="details" aria-live="polite">
+        <p class="eyebrow">Selection</p>
+        <h2>Choose a node</h2>
+        <p>Select any module, MCP server, tool, boundary, or gap to inspect its evidence and relationships.</p>
+      </aside>
+    </section>
+  </main>
+  <script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,33 @@
+# Python
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+*.egg-info/
+
+# Cartograph local state and subject registry
+.cartograph/
+cartograph.local.json
+
+# Viewer/runtime output
+artifacts/
+
+# Editor / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Valtor skills and agents are committed; local projections are not
+.claude/*
+!.claude/skills/
+!.claude/agents/
+!.claude/commands/
+!.claude/settings.json
+.agents/valtor/index/*.sqlite
+.agents/valtor/index/*.sqlite-*
+.agents/valtor/index/valtor.lock
+.agents/valtor/index/run-journal.jsonl
+.agents/valtor/index/run_journal.jsonl
+.agents/valtor/index/budget.jsonl

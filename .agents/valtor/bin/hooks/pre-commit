@@ -1,0 +1,38 @@
+#!/bin/sh
+# Valtor pre-commit hook — the engine-agnostic guardrail ratchet (G-engine-agnostic).
+# Runs bin/check-project-agnostic.mjs before EVERY commit and BLOCKS when host-repo
+# instance data has leaked into the universal engine files. Generic: the checker reads
+# every specific (tokens, scan set) from valtor.config.json; this script names no repo.
+#
+# Install (once per clone):  cp .agents/valtor/bin/hooks/pre-commit .git/hooks/pre-commit
+# Deliberate bypass (rare):  VALTOR_SKIP_AGNOSTIC=1 git commit ...   or   git commit --no-verify
+
+[ "$VALTOR_SKIP_AGNOSTIC" = "1" ] && exit 0
+
+CHECKER=".agents/valtor/bin/check-project-agnostic.mjs"
+# A repo without the chip has nothing to enforce.
+[ -f "$CHECKER" ] || exit 0
+
+# Find node: PATH first, then common install locations (Windows Git-Bash form + unix).
+NODE="$(command -v node 2>/dev/null)"
+if [ -z "$NODE" ]; then
+  for c in "/c/Program Files/nodejs/node.exe" "/usr/local/bin/node" "/usr/bin/node" "/opt/homebrew/bin/node"; do
+    if [ -x "$c" ]; then NODE="$c"; break; fi
+  done
+fi
+if [ -z "$NODE" ]; then
+  echo "valtor pre-commit: node not found - cannot run the engine-agnostic check (a gate is never silently skipped)." >&2
+  echo "Install node, or bypass deliberately with VALTOR_SKIP_AGNOSTIC=1 git commit ... (or --no-verify)." >&2
+  exit 1
+fi
+
+OUT="$("$NODE" "$CHECKER" 2>&1)"
+STATUS=$?
+if [ $STATUS -ne 0 ]; then
+  echo "COMMIT BLOCKED - engine-agnostic guardrail: host instance data in universal Valtor engine files." >&2
+  echo "$OUT" >&2
+  echo "Fix: move the leak into valtor.config.json (or reference the config key), then re-commit." >&2
+  echo "Deliberate bypass: VALTOR_SKIP_AGNOSTIC=1 git commit ...  (or git commit --no-verify)" >&2
+  exit 1
+fi
+exit 0

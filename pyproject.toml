@@ -1,0 +1,27 @@
+[build-system]
+requires = ["setuptools>=75"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "cartograph-mcp"
+version = "0.1.0"
+description = "Evidence-bound codebase dependency graphs for humans and AI agents"
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+authors = [{ name = "Tvaltorix" }]
+dependencies = ["mcp>=1.28,<2"]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.3,<9", "pytest-anyio>=0.0.0"]
+
+[project.scripts]
+cartograph = "cartograph.cli:main"
+cartograph-mcp = "cartograph.mcp_server:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"

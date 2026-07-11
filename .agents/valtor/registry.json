@@ -1,0 +1,1011 @@
+{
+  "_doc": "VALTOR registry — gates, roles, detectors, projections, operations. ADDITIVE: grow Valtor by adding an entry here + (optionally) a bin/ script; never by editing the state machine. SCHEMA.md defines each field. 'active:false' entries are dormant until activateWhen fires. Where a 'run' script is absent, the orchestrator performs the entry's intent by reasoning and records run_kind:'orchestrator-reasoning' in gate_results (a gate is never silently skipped). Intents are generic; repo-specific paths/values come from valtor.config.json. (run/render reconciled to real bin/ scripts 2026-06-18; null run = orchestrator-reasoning gate. 0.3.0 merged the companion books 2026-07-08: G0 plan-refine, Council seats/GC-council [COUNCIL.md], guardrail cascade + propagation detectors + artifact projections [EXTENSIONS.md], game fleet + G-import [GAMEDEV.md] — book entries ship dormant behind their config seams. 0.4.0 added the sweeps operations [SWEEPS.md]: reconcile-sweep + verification-sweep — named, invocable currency/correctness ops that COMPOSE existing gates, reasoning-mode, config-driven.)",
+  "version": "0.4.0",
+  "roles": [
+    {
+      "id": "orchestrator",
+      "agentType": "(this skill)",
+      "active": true,
+      "owns": "Tech lead. State walk; lock; wave/conflict/blast-radius planning; SERIAL commit+deploy; conflict-zone edits; SOLE writer to every ledger table; branch policy. All work routes through here."
+    },
+    {
+      "id": "pm",
+      "agentType": "valtor-pm",
+      "active": true,
+      "owns": "Product/BA. Requirement clarity, scope boundary, Definition-of-Ready (G2b), severity assignment, ambiguity -> confer, S-RETRO, and the stakeholder/demo-prep Anticipated-Q&A brief (predict the room's questions + learn what matters). Cannot write code."
+    },
+    {
+      "id": "dev",
+      "agentType": "valtor-dev",
+      "active": true,
+      "owns": "Dispatched implementer fleet. Inner senior-dev cycle per item (read context -> plan -> implement to convention -> self-test -> self-review). Returns DIFF + self-report; never commits/deploys/touches conflict zones."
+    },
+    {
+      "id": "reviewer",
+      "agentType": "valtor-reviewer",
+      "active": true,
+      "activateWhen": "any item reaches INTEGRATE with a diff to commit",
+      "owns": "Independent code review BEFORE commit, on a DIFFERENT agent instance than the author. Correctness, convention, reuse/dead-code, blast radius. Blocks on P0/P1 finding. run target: the /code-review skill."
+    },
+    {
+      "id": "debugger",
+      "agentType": "valtor-debugger",
+      "active": true,
+      "activateWhen": "any blocking gate FAILs for an item, or a deploy goes red",
+      "owns": "Failure triage: consult the failure catalog FIRST -> reproduce -> isolate (diff-bisect) -> root-cause hypothesis with file:line -> hand a constrained FIX-SPEC to dev (conflict-zone root cause -> to orchestrator) -> own the regression re-run. Reads broadly; proposes a fix-spec, not a diff; never commits."
+    },
+    {
+      "id": "data",
+      "agentType": "valtor-data",
+      "active": true,
+      "owns": "DB-constraint principle (G3), migration safety (G3b), the ledger schema. Reviews every migration for a paired constraint + down-pair + backfill."
+    },
+    {
+      "id": "security",
+      "agentType": "valtor-security",
+      "active": true,
+      "owns": "Arch/security invariant gate (G2), negative-authz, dependency/secret scan, threat model. HAS VETO."
+    },
+    {
+      "id": "qa",
+      "agentType": "valtor-qa",
+      "active": true,
+      "owns": "Verification (GV), tests + regression + exploratory, gap audit (G4), contract-lockstep (G4c), flaky quarantine, E2E (G-E2E), the stale/orphan SWEEP (G6)."
+    },
+    {
+      "id": "devops",
+      "agentType": "valtor-devops",
+      "active": false,
+      "activateWhen": "item touches CI/CD, infra deploy, or observability",
+      "owns": "Deploy gates (G5/G5.5), one-deploy-at-a-time, CI ordering, rollback, observability (G-Observability)."
+    },
+    {
+      "id": "designer",
+      "agentType": "valtor-designer",
+      "active": false,
+      "activateWhen": "item touches UI / interaction",
+      "owns": "Interface + interaction spec (attached before dispatch at S3), NFR/a11y gate (G-NFR)."
+    },
+    {
+      "id": "council-isso",
+      "agentType": "council-isso",
+      "kind": "council-seat",
+      "tier": 1,
+      "active": false,
+      "activateWhen": "config.council.enabled — convenes every plan + every retro (COUNCIL.md 6)",
+      "owns": "ADVISORY, read-only. Security & compliance framework mapping of the PLAN (FedRAMP High / NIST 800-171 / FIPS 140-2->3): crypto choices, secret placement, boundary crossings, access-control model, audit-event coverage, encryption in transit/at rest, dependency CVE posture. FAIL requires valtor-security concurrence to become a halt-5 veto; disagreement -> S-ASK. Never re-litigates an item that passed G2."
+    },
+    {
+      "id": "council-dbre",
+      "agentType": "council-dbre",
+      "kind": "council-seat",
+      "tier": 1,
+      "active": false,
+      "activateWhen": "config.council.enabled — plans touching schema/storage/data flow; retros with data items",
+      "owns": "ADVISORY, read-only. Plan-level data architecture: transaction boundaries specified, storage/retrieval symmetry, migration down-pairs + backfill intent stated, retention/deletion defined. Proposes CRITERIA additions so G3/G3b/GV have machine-checkable targets. Never re-litigates items past G3."
+    },
+    {
+      "id": "council-legal",
+      "agentType": "council-legal",
+      "kind": "council-seat",
+      "tier": 2,
+      "active": false,
+      "activateWhen": "config.council.enabled — plans adding dependencies, collecting data, or touching regulated domains (incl. game: store policies, age ratings, COPPA, loot-box rules, licensed assets)",
+      "owns": "ADVISORY, read-only. Legal exposure: personal-data collection (minimal/disclosed/deletable), dependency licenses vs distribution (GPL/AGPL flags), regulated-domain entry, export control. Flags and frames, never resolves — unresolved HIGH -> S-ASK Decision Brief (the human's call)."
+    },
+    {
+      "id": "council-req",
+      "agentType": "council-req",
+      "kind": "council-seat",
+      "tier": 2,
+      "active": false,
+      "activateWhen": "config.council.enabled — every plan + every retro",
+      "owns": "ADVISORY, read-only. Plan-vs-product-definition alignment BEFORE decompose: every plan line traceable to a real requirement (scope creep caught at the source), silent omissions, criteria that will not be machine-checkable (pre-empting G2b failures)."
+    },
+    {
+      "id": "council-ux",
+      "agentType": "council-ux",
+      "kind": "council-seat",
+      "tier": 3,
+      "active": false,
+      "activateWhen": "config.council.enabled — plans/retros with UI items",
+      "owns": "ADVISORY, read-only. Plan-level flow coherence, error/empty states named, a11y called out so valtor-designer's CLEAR spec and G-NFR have targets. Defers all item-level work to valtor-designer."
+    },
+    {
+      "id": "council-dev",
+      "agentType": "council-dev",
+      "kind": "council-seat",
+      "tier": 3,
+      "active": false,
+      "activateWhen": "config.council.enabled — milestone retros ONLY (never S1.5)",
+      "owns": "ADVISORY, read-only. Maintainability trends across the run: recurring G4b finding categories, error-handling weak spots, refactor debt worth a backlog item. Never reviews diffs — that is valtor-reviewer's gate."
+    },
+    {
+      "id": "council-mobile",
+      "agentType": "council-mobile",
+      "kind": "council-seat",
+      "tier": 3,
+      "active": false,
+      "activateWhen": "config.council.enabled — mobile-conversion plans only",
+      "owns": "ADVISORY, read-only. Offline/connection-drop behavior specified per feature (with DBRE on sync integrity), platform guideline + store-policy risks, secure on-device storage (with ISSO). Proposes plaintext-on-device detector as GATE-PROPOSAL."
+    },
+    {
+      "id": "gamedir",
+      "agentType": "valtor-gamedir",
+      "kind": "game-fleet",
+      "active": false,
+      "activateWhen": "config.game.enabled && 'gamedir' in config.game.fleet",
+      "owns": "Domain lead, ADVISORY (ATLAS absorbed — authority stays with the orchestrator). First-run repo scan -> Project Brief (a T1 doc under propagation); infers engine/genre/scope/phase for the game config seam (human-confirmed via S-ASK); provides the S4 dispatch routing table (item mode/paths -> fleet persona); S-RETRO roster-gap analysis (evidence-based ROSTER-GAP findings -> S-ASK Decision Brief). Never commits, never writes the ledger."
+    },
+    {
+      "id": "gamedesign",
+      "agentType": "valtor-gamedesign",
+      "kind": "game-fleet",
+      "active": false,
+      "activateWhen": "config.game.enabled && 'gamedesign' in config.game.fleet",
+      "owns": "Spec authority (COMPASS) — game analog of valtor-designer: no game-feature item clears G2b without its spec (GDD section + acceptance criteria as observable play behavior + tunables table name/type/default/min/max/intent). Sits at S-RETRO: 'did what shipped match the design intent'. Tunables are data — a ratcheted guardrail greps gameplay code for magic-number literals matching tunable names."
+    },
+    {
+      "id": "art",
+      "agentType": "valtor-art",
+      "kind": "game-fleet",
+      "active": false,
+      "activateWhen": "config.game.enabled && 'art' in config.game.fleet",
+      "owns": "Asset fleet worker (FORGE): returns DELIVERIES instead of diffs — paths under scoped asset dirs + self-report (export_profile, checks_run: scale/orientation/UV/skin-weights/clip-count/naming, known_limits) + validation_required_by. G-scope applies unchanged; engine config/project settings are conflict zones. Never validates its own exports (importer != exporter)."
+    },
+    {
+      "id": "unreal",
+      "agentType": "valtor-unreal",
+      "kind": "game-fleet",
+      "active": false,
+      "activateWhen": "config.game.enabled && config.game.engine in (unreal, both)",
+      "owns": "Engine fleet worker (ANVIL) for Unreal-engine items; ALSO the enforcing side of the art handoff: runs G-import in-engine on every asset delivery (scale, orientation, skinning, one clip playing, material assignment) and returns pass/fail."
+    },
+    {
+      "id": "unity",
+      "agentType": "valtor-unity",
+      "kind": "game-fleet",
+      "active": false,
+      "activateWhen": "config.game.enabled && config.game.engine in (unity, both)",
+      "owns": "Engine fleet worker (BOLT) for Unity items; same G-import validator duties as valtor-unreal on Unity repos. Keep one engine worker, or both for multi-engine."
+    },
+    {
+      "id": "gameplay",
+      "agentType": "valtor-gameplay",
+      "kind": "game-fleet",
+      "active": false,
+      "activateWhen": "config.game.enabled && 'gameplay' in config.game.fleet",
+      "owns": "Pure-logic fleet worker (PATCH): gameplay systems as deterministic, engine-agnostic code; determinism + unit tests feed G4 directly. Moves COMPASS tunables through importers (DataTables/ScriptableObjects), never hardcodes them."
+    }
+  ],
+  "gates": [
+    {
+      "id": "G0-plan-refine",
+      "state": "INGEST",
+      "blocking": true,
+      "owner": "pm",
+      "run": null,
+      "active": true,
+      "mode": "reasoning",
+      "intent": "Read every ingested plan as a structured prompt BEFORE reconcile/council/decompose (SCHEMA §2.1): surface the objective AND the why behind it; hold scope to YAGNI; infer per-item 'Done means' criteria (machine-checkable — feeds G2b); build verification into criteria so the human is never the QA; batch all defects/asks into ONE set; confirm stop conditions. Invoke the user-scope 'refine-prompt' skill when available (config.planRefine.skill); otherwise reason the checklist inline. Genuinely ambiguous goal/audience/constraints -> HALT case 3 (confer) as one batched question set, before decompose. Amendments re-hash the plan; the drift detector re-decomposes only the delta."
+    },
+    {
+      "id": "G1-reconcile-sweep",
+      "state": "RECONCILE",
+      "blocking": true,
+      "owner": "orchestrator",
+      "run": "bin/gate-reconcile-sweep.mjs",
+      "active": true,
+      "intent": "Sweep config.reconcileSweep.targets for wording the new plan contradicts; auto-fix cosmetic drift; HALT on contradiction."
+    },
+    {
+      "id": "GC-council",
+      "state": "COUNCIL",
+      "blocking": true,
+      "owner": "orchestrator",
+      "run": null,
+      "active": false,
+      "activateWhen": "config.council.enabled",
+      "mode": "reasoning",
+      "intent": "S1.5 (COUNCIL.md): distribute the post-G1 plan to the active seats per the activation matrix; each seat reviews ALONE (independent sub-agent pass, no cross-visibility) and returns the structured seat report; the orchestrator (never the seats) reconciles — precedence ISSO > DBRE > Legal > Requirements > others; ISSO-vs-valtor-security conflict -> S-ASK Decision Brief. Accepted findings route to exactly one action: AMEND / INJECT / CRITERIA / GATE-PROPOSAL / HALT / QUESTION; rejections logged to decisions.jsonl with reason+scope. Max 2 rounds (Tier-1 FAIL confirmed by counterpart forces another); seat reports land in council.jsonl. No new halt conditions."
+    },
+    {
+      "id": "G2-arch-security-scope",
+      "state": "CLEAR",
+      "blocking": true,
+      "owner": "security",
+      "run": null,
+      "active": true,
+      "intent": "Per-item check against config.archGates: region, language policy, scope/phase boundary, key inventory, identity/MFA/domain, no-PII-logging. Violation -> HALT/confer.",
+      "mode": "reasoning"
+    },
+    {
+      "id": "G2b-ready",
+      "state": "CLEAR",
+      "blocking": true,
+      "owner": "pm",
+      "run": null,
+      "active": true,
+      "intent": "Definition-of-Ready: depends_on satisfied or same-wave-with-pinned-contract; UI items have a designer spec attached; success_criteria enumerate the full acceptance surface; referent_path resolved. Fail -> HALT/confer (ambiguous item).",
+      "mode": "reasoning"
+    },
+    {
+      "id": "G3-db-constraint",
+      "state": "CLEAR,INTEGRATE",
+      "blocking": true,
+      "owner": "data",
+      "run": "bin/gate-db-constraint.mjs",
+      "appliesWhen": "referent_kind==migration || hasDomainColumn",
+      "active": true,
+      "intent": "Require a paired DB constraint assertion in success_criteria. Missing -> migration item is an orphan_candidate; HALT."
+    },
+    {
+      "id": "G3b-migration-safety",
+      "state": "CLEAR,INTEGRATE",
+      "blocking": true,
+      "owner": "data",
+      "run": "bin/gate-migration-safety.mjs",
+      "appliesWhen": "referent_kind==migration",
+      "active": true,
+      "intent": "Every up has a paired down; column-add on a populated table declares a backfill/safe-default; destructive op on a config.dataSafety.realDataTables table -> HALT; migrate-runner-before-service-redeploy enforced."
+    },
+    {
+      "id": "GV-verify",
+      "state": "RECONCILE-OUT",
+      "blocking": true,
+      "owner": "qa",
+      "run": null,
+      "active": true,
+      "intent": "Reproduce each item's success_criteria; before any arch pivot, run Verify-Before-Concluding (vary one input, test alternate config/region). Fail -> S-DEBUG.",
+      "mode": "reasoning"
+    },
+    {
+      "id": "G-scope",
+      "state": "RECONCILE-OUT",
+      "blocking": true,
+      "owner": "orchestrator",
+      "run": "bin/scope-check.mjs",
+      "active": true,
+      "intent": "Assert each worker diff's touched paths subset item.scope_files, disjoint from config.conflictZones + item.readonly_files. Escape -> reject, do not apply; conflict-zone hunk -> orchestrator re-implements."
+    },
+    {
+      "id": "G4-test-gap",
+      "state": "INTEGRATE",
+      "blocking": true,
+      "owner": "qa",
+      "run": null,
+      "active": true,
+      "intent": "Run item tests + gap audit: every plan line maps to a done OR explicitly-deferred item. Fail -> S-DEBUG.",
+      "mode": "reasoning"
+    },
+    {
+      "id": "G4b-code-review",
+      "state": "INTEGRATE",
+      "blocking": true,
+      "owner": "reviewer",
+      "run": null,
+      "active": true,
+      "intent": "Fresh agent (NOT the author) reads the diff for correctness + convention + reuse + blast radius BEFORE commit. P0/P1 finding -> re-dispatch to dev.",
+      "mode": "reasoning"
+    },
+    {
+      "id": "G4c-contract-lockstep",
+      "state": "INTEGRATE",
+      "blocking": true,
+      "owner": "qa",
+      "run": "bin/gate-contract-lockstep.mjs",
+      "active": true,
+      "intent": "Run event/route/migration lockstep extractors against the just-integrated diff; block if one side of a pinned contract landed without the other (moved inline from the S9 sweep)."
+    },
+    {
+      "id": "G5-smoke",
+      "state": "DEPLOY",
+      "blocking": true,
+      "owner": "devops",
+      "run": "infrastructure/scripts/smoke-test.ts",
+      "autoDetect": true,
+      "active": true,
+      "intent": "Pre-deploy public-surface probe. If the script is absent, scaffold a minimal reachability gate."
+    },
+    {
+      "id": "G5-negative-authz",
+      "state": "DEPLOY",
+      "blocking": true,
+      "owner": "security",
+      "run": "infrastructure/scripts/negative-authz-sweep.ts",
+      "autoDetect": true,
+      "active": true,
+      "intent": "New routes added to the sweep + 100% pass (401/403 unauth). If the script is absent, scaffold."
+    },
+    {
+      "id": "G5.5-deploy-health",
+      "state": "DEPLOY",
+      "blocking": true,
+      "owner": "devops",
+      "run": "bin/deploy-health.mjs",
+      "active": true,
+      "intent": "Post-deploy: poll smoke + canary alarms; classify green/red/cancelled. Red -> revert-on-branch + freeze wave + route to S-DEBUG. Cancelled -> lock-check + re-run, never treat as red."
+    },
+    {
+      "id": "G6-stale-orphan",
+      "state": "SWEEP",
+      "blocking": false,
+      "surfaces": true,
+      "owner": "qa",
+      "run": null,
+      "active": true,
+      "intent": "Run the active detectors; SURFACE findings via confer. Never auto-delete / auto-wire. Absorbs every ratcheted class signature from the guardrail cascade, the staleness detector family (trailing-fingerprint / hand-edit-drift / broken-cite / orphan-anchor / unregistered-artifact; EXTENSIONS.md 3.6), and the asset-orphan detectors on game repos (GAMEDEV.md 3).",
+      "mode": "reasoning"
+    },
+    {
+      "id": "G7-propagate",
+      "state": "PROPAGATE",
+      "blocking": true,
+      "owner": "orchestrator",
+      "run": null,
+      "active": true,
+      "intent": "Update config.propagation targets + ADR + memory snapshot + regenerate projections in the same pass. Build isn't done until docs match reality. Lockstep form (EXTENSIONS.md Part 3, when config.artifacts/propagation.map.json are wired): regenerate exactly the dirty surfaces in dependency order, stamp each with the ledger head, then BLOCK done until the dirty set is empty AND a fingerprint audit shows every registered surface's generated_from equals ledger head — an empty dirty set with a trailing fingerprint means a generator failed silently; both checks must pass.",
+      "mode": "reasoning"
+    },
+    {
+      "id": "G-nfr",
+      "state": "INTEGRATE",
+      "blocking": true,
+      "owner": "designer",
+      "run": null,
+      "active": false,
+      "activateWhen": "item touches UI or a perf-sensitive path",
+      "intent": "Assert NFR success_criteria from config.nfrBudgets: a11y (keyboard/contrast on changed components), perf budget (virtualization holds, search p95 under target), i18n (no hardcoded user-facing strings).",
+      "mode": "reasoning"
+    },
+    {
+      "id": "G-e2e",
+      "state": "DEPLOY",
+      "blocking": true,
+      "owner": "qa",
+      "run": null,
+      "active": false,
+      "activateWhen": "the plan declares a user flow / demo path",
+      "intent": "Run config.e2e.dryRun if present, else reason through the named flow against staging asserting each hop. Tiered-done: a declared flow must be green for done.",
+      "mode": "reasoning"
+    },
+    {
+      "id": "G-observability",
+      "state": "DEPLOY",
+      "blocking": false,
+      "surfaces": true,
+      "owner": "devops",
+      "run": null,
+      "active": false,
+      "activateWhen": "item adds a public route, event detail-type, or background task",
+      "intent": "Assert the shipped surface has a metric + alarm (or canary/log-error alarm) and a recorded owner. Surfaces, non-blocking.",
+      "mode": "reasoning"
+    },
+    {
+      "id": "G-behavior-lock",
+      "state": "INTEGRATE",
+      "blocking": true,
+      "owner": "qa",
+      "run": null,
+      "mode": "reasoning",
+      "active": false,
+      "activateWhen": "LoopItem.mode in (audit, refactor, optimize) or any behavior-preserving change",
+      "intent": "Capture the test/behavior baseline BEFORE changes; prove the SAME tests pass identically AFTER. Behavior must not change — only quality/scalability/perf. A behavior diff -> block + route to S-DEBUG."
+    },
+    {
+      "id": "G-guardrail",
+      "state": "INTEGRATE",
+      "blocking": true,
+      "owner": "qa",
+      "run": null,
+      "mode": "reasoning",
+      "active": true,
+      "activateWhen": "item passed through S-DEBUG (a blocking gate FAILed and was resolved this run)",
+      "intent": "The guardrail ratchet, in cascade form (EXTENSIONS.md Part 2: FIX -> SWEEP -> RATCHET). A resolved failure is not 'fixed' until the FULL CHAIN is recorded on its failures-ledger row: (1) S-DEBUG produced a class SIGNATURE (an executable definition of the error class — lint/grep/AST/graph query/CI script; if one cannot be written the class isn't understood -> halt-worthy), (2) the instance fix landed, (3) the signature SWEPT the whole repo with the result recorded (every hit -> remediation LoopItem; '0 additional instances' is a recorded result; hits > budget -> halt 8 Decision Brief), (4) only after a clean sweep, the same signature is RATCHETED into CI / the G6 detector suite and is green. An instance-only regression test is NOT sufficient. Any missing link blocks; explicit 'waived' with reason is the only exception. Reasoning-only guardrails graduate to a bin/ detector at S-RETRO."
+    },
+    {
+      "id": "G-import",
+      "state": "INTEGRATE",
+      "blocking": true,
+      "owner": "engine-worker",
+      "run": null,
+      "active": false,
+      "activateWhen": "config.game.enabled && item delivery is an asset (GAMEDEV.md 3)",
+      "mode": "reasoning",
+      "intent": "Asset-delivery validation, the enforcing side of the art handoff contract: the RECEIVING engine worker (valtor-unreal / valtor-unity) runs the handoff checklist in-engine — scale, orientation, skinning/weights, one animation clip playing, material assignment — and returns pass/fail. FAIL re-dispatches to the exporting worker with the failure note. Importer is never the exporter (reviewer != author for binaries). An asset shipped without import validation is a one-sided contract -> blocked, exactly like an event emitted but never handled."
+    },
+    {
+      "id": "G-engine-agnostic",
+      "state": "PROPAGATE",
+      "blocking": true,
+      "owner": "orchestrator",
+      "run": "bin/check-project-agnostic.mjs",
+      "mode": "script",
+      "active": true,
+      "activateWhen": "a universal Valtor engine file (skill, role agents, SCHEMA/MODES/README/ROADMAP, registry, bin/) was edited this run",
+      "intent": "Keep the loop portable. Scan the universal engine files for host-repo INSTANCE DATA (config.agnosticGuardrail.repoTokens; structural shapes: cloud account ids / ARNs / region codes / emails / absolute home paths; and the literal VALUES of host config paths that should be referenced by their config KEY). Exit non-zero blocks. The mechanism is generic; every repo-specific is read from valtor.config.json (the only seam). Run after any engine edit — it is both the standing guardrail and the leak-hunt tool."
+    }
+  ],
+  "detectors": [
+    {
+      "id": "route-no-ui",
+      "class": "orphan",
+      "run": "bin/detect-route-no-ui.mjs",
+      "emitsEdges": true,
+      "active": true,
+      "intent": "backend route table MINUS UI call sites (config.extractors)"
+    },
+    {
+      "id": "ui-no-backend",
+      "class": "orphan",
+      "run": "bin/detect-ui-no-backend.mjs",
+      "emitsEdges": true,
+      "active": true,
+      "intent": "UI fetch strings absent from any service route table"
+    },
+    {
+      "id": "plan-item-no-commit",
+      "class": "orphan",
+      "run": "bin/detect-item-no-commit.mjs",
+      "active": true,
+      "intent": "LoopItem.status!=done AND no commit references its id"
+    },
+    {
+      "id": "event-no-handler",
+      "class": "orphan",
+      "run": "bin/detect-event-lockstep.mjs",
+      "emitsEdges": true,
+      "active": true,
+      "intent": "detail-type present in fewer than all of {emitter, fan-out router, UI subscriber}"
+    },
+    {
+      "id": "migration-no-model",
+      "class": "orphan",
+      "run": "bin/detect-migration-no-model.mjs",
+      "emitsEdges": true,
+      "active": true,
+      "intent": "migration adds column/table never referenced by a query/serde struct OR missing its DB constraint"
+    },
+    {
+      "id": "doc-stale-content-hash",
+      "class": "stale",
+      "run": "bin/detect-doc-stale.mjs",
+      "active": true,
+      "intent": "doc_anchor/map-edge referent changed since last_seen_commit, cited file:line gone, or a superseding record exists"
+    },
+    {
+      "id": "code-stale-zero-inbound",
+      "class": "stale",
+      "run": null,
+      "active": false,
+      "activateWhen": "import graph available",
+      "intent": "code with zero inbound imports -> removal-candidate list only, never auto-remove",
+      "mode": "reasoning"
+    },
+    {
+      "id": "plan-drift",
+      "class": "drift",
+      "run": "bin/plan-drift.mjs",
+      "active": true,
+      "intent": "re-hash the plan on S0/re-entry; diff vs plans-table fingerprint; re-decompose the delta; removed in-flight item -> SURFACE"
+    },
+    {
+      "id": "flaky-criterion",
+      "class": "stale",
+      "run": "bin/detect-flaky.mjs",
+      "active": true,
+      "intent": "flag any success_criterion with >1 pass/fail flip in the failures table; surfaces only"
+    },
+    {
+      "id": "shared-node-collision",
+      "class": "planning",
+      "run": "bin/detect-shared-node.mjs",
+      "active": true,
+      "intent": "two same-wave items whose blast-radius impact sets intersect on a table/event/service node -> serialize even with disjoint file scope"
+    },
+    {
+      "id": "trailing-fingerprint",
+      "class": "propagation",
+      "run": null,
+      "active": false,
+      "activateWhen": "config.artifacts || propagation.map.json present",
+      "mode": "reasoning",
+      "intent": "EXTENSIONS.md 3.6 (SURFACES): any registered surface whose generated_from stamp is older than the ledger head. Ratcheted class signature — the G7 fingerprint audit is its BLOCKING form."
+    },
+    {
+      "id": "hand-edit-drift",
+      "class": "propagation",
+      "run": null,
+      "active": false,
+      "activateWhen": "config.artifacts || propagation.map.json present",
+      "mode": "reasoning",
+      "intent": "EXTENSIONS.md 3.6 (SURFACES): a T2 projection whose content hash != hash recorded at last generation (someone edited a generated surface). Asks: absorb the edit upstream into T0/T1, or discard on regenerate."
+    },
+    {
+      "id": "broken-cite",
+      "class": "propagation",
+      "run": null,
+      "active": false,
+      "activateWhen": "config.artifacts || propagation.map.json present",
+      "mode": "reasoning",
+      "intent": "EXTENSIONS.md 3.6 (SURFACES): a {{cite:...}} token whose target id no longer exists (item deleted, file moved, anchor renamed)."
+    },
+    {
+      "id": "orphan-anchor",
+      "class": "propagation",
+      "run": null,
+      "active": false,
+      "activateWhen": "config.artifacts || propagation.map.json present",
+      "mode": "reasoning",
+      "intent": "EXTENSIONS.md 3.6 (SURFACES): a T1 doc anchor no surface references anymore — candidate dead prose."
+    },
+    {
+      "id": "unregistered-artifact",
+      "class": "propagation",
+      "run": null,
+      "active": false,
+      "activateWhen": "config.artifacts",
+      "mode": "reasoning",
+      "intent": "EXTENSIONS.md 3.6 (SURFACES): a file in the artifacts output dir absent from propagation.map.json — it exists outside the no-stale guarantee."
+    },
+    {
+      "id": "asset-orphan",
+      "class": "orphan",
+      "run": null,
+      "active": false,
+      "activateWhen": "config.game.enabled",
+      "mode": "reasoning",
+      "intent": "GAMEDEV.md 3 (SURFACES): asset edges over graph.jsonl with a missing endpoint — textures no material references, animation clips no state machine plays, meshes no level places. Same orphan computation as route-no-ui, over content edges."
+    }
+  ],
+  "projections": [
+    {
+      "id": "roadmap",
+      "render": "bin/render-roadmap.mjs",
+      "out": ".agents/valtor/roadmap.md",
+      "regenOn": [
+        "S10"
+      ],
+      "active": true,
+      "intent": "human-readable status board regenerated from the index"
+    },
+    {
+      "id": "ledger-export",
+      "render": null,
+      "out": ".agents/valtor/index/items.jsonl",
+      "regenOn": [
+        "S7",
+        "S10"
+      ],
+      "active": true,
+      "intent": "git-reviewable JSONL exports of the SQLite working set (items/decisions/transitions/plans/graph)",
+      "mode": "reasoning"
+    },
+    {
+      "id": "board",
+      "render": "bin/render-board.mjs",
+      "out": ".agents/valtor/BOARD.md",
+      "regenOn": [
+        "S10",
+        "review-summary"
+      ],
+      "active": true,
+      "intent": "Exec board: completion table (plan x phase x domain, honest denominator), 6 readiness gauges, Mermaid (status pie + dependency graph + phase bar), burn-down + ETA, top blockers."
+    },
+    {
+      "id": "readiness",
+      "render": "bin/render-readiness.mjs",
+      "out": ".agents/valtor/READINESS.md",
+      "regenOn": [
+        "S10",
+        "review-summary"
+      ],
+      "active": true,
+      "intent": "6 dimensions scored 0-100 from gate_results; overall = min(), not mean."
+    },
+    {
+      "id": "blockers",
+      "render": "bin/render-blockers.mjs",
+      "out": ".agents/valtor/BLOCKERS.md",
+      "regenOn": [
+        "S10",
+        "review-summary"
+      ],
+      "active": true,
+      "intent": "one register from 5 computable sources; computed severity + age_hours; also sync to config.propagation.stateDir."
+    },
+    {
+      "id": "system-map",
+      "render": "bin/render-system-map.mjs",
+      "out": ".agents/valtor/system-map.md",
+      "also": ".agents/valtor/index/graph.jsonl",
+      "regenOn": [
+        "S9",
+        "S10"
+      ],
+      "active": true,
+      "intent": "node+edge graph; edges = UNION of detector extractor outputs (NOT a second extraction). Mermaid + queryable jsonl. Degraded mode per config.map seams."
+    },
+    {
+      "id": "run-journal-digest",
+      "render": "bin/render-last-run.mjs",
+      "out": ".agents/valtor/last-run.md",
+      "regenOn": [
+        "S11"
+      ],
+      "active": true,
+      "intent": "human digest of the most recent run from run-journal.jsonl"
+    },
+    {
+      "id": "index-rebuild",
+      "render": "bin/index-rebuild.mjs",
+      "out": ".agents/valtor/index/valtor.sqlite",
+      "active": true,
+      "intent": "reconstruct the SQLite from committed *.jsonl exports + git log + plan re-decompose; auto-runs on re-entry if the sqlite is missing; reasoning-fallback if the script is absent"
+    },
+    {
+      "id": "retro",
+      "render": "bin/render-retro.mjs",
+      "out": ".agents/valtor/retro-latest.md",
+      "regenOn": [
+        "phase-completion",
+        "S11"
+      ],
+      "active": true,
+      "intent": "review S-DEBUG entries + surfaced orphans; propose registry additions / bin/ codification of reasoning-only gates; append patterns to the failure catalog"
+    },
+    {
+      "id": "anticipated-qa",
+      "render": null,
+      "out": ".agents/valtor/QA-BRIEF.md",
+      "regenOn": [
+        "phase-completion",
+        "S11",
+        "on-demand"
+      ],
+      "owner": "pm",
+      "active": true,
+      "intent": "Stakeholder-lens + skeptic-lens question prediction with grounded draft answers; unknowns -> confer/work items; records asked-questions + answers into the concerns ledger to learn what matters (config.anticipatedQa + config.stakeholders; SCHEMA §11).",
+      "mode": "reasoning"
+    },
+    {
+      "id": "council-report",
+      "render": null,
+      "out": "artifacts/council-report.html",
+      "regenOn": [
+        "S1.5",
+        "S10",
+        "phase-completion"
+      ],
+      "owner": "orchestrator",
+      "active": false,
+      "activateWhen": "config.council.enabled",
+      "mode": "reasoning",
+      "intent": "COUNCIL.md 5 + EXTENSIONS.md 1.3: data-island artifact of council.jsonl — seat verdicts, findings, dispositions (accepted/rejected+reason/deferred), open retro questions. A projection: rebuildable from council.jsonl."
+    },
+    {
+      "id": "open-items",
+      "render": null,
+      "out": "artifacts/open-items.html",
+      "regenOn": [
+        "S10"
+      ],
+      "owner": "orchestrator",
+      "active": false,
+      "activateWhen": "config.artifacts",
+      "mode": "reasoning",
+      "intent": "EXTENSIONS.md Part 1: plan-capable board with a #valtor-data island (items.jsonl + status_transitions.jsonl burn-down). INGESTable as a plan at S0 (island hashed, stable ids feed S2 dedupe); regenerated from the ledger at S10. HTML is presentation only, zero authority."
+    },
+    {
+      "id": "function-map",
+      "render": null,
+      "out": "artifacts/function-map.html",
+      "regenOn": [
+        "S9",
+        "S10"
+      ],
+      "owner": "orchestrator",
+      "active": false,
+      "activateWhen": "config.artifacts",
+      "mode": "reasoning",
+      "intent": "EXTENSIONS.md Part 1: data-island projection of graph.jsonl + G6 detector output (ok/stub/broken/orphan per node). A render of the same extraction pass as system-map, not a second one."
+    },
+    {
+      "id": "master-reference",
+      "render": null,
+      "out": "artifacts/master-reference.html",
+      "regenOn": [
+        "S10"
+      ],
+      "owner": "orchestrator",
+      "active": false,
+      "activateWhen": "config.artifacts",
+      "mode": "reasoning",
+      "intent": "EXTENSIONS.md Part 1 + 1.5: per-project master artifact. Sections (config.artifacts.sections) from graph.jsonl (architecture) + migration scan (schema inventory) + gate_results (audit status) + readiness min() + decisions/ADR index. Counters are {{cite:count:...}} tokens rendered at generation time so numbers can never disagree across surfaces (EXTENSIONS.md 3.2)."
+    },
+    {
+      "id": "artifact-launcher",
+      "render": null,
+      "out": "artifacts/index.html",
+      "regenOn": [
+        "S10"
+      ],
+      "owner": "orchestrator",
+      "active": false,
+      "activateWhen": "config.artifacts",
+      "mode": "reasoning",
+      "intent": "EXTENSIONS.md 1.3/1.4: self-registering launcher for the generated boards; hosts the 'Export intents' action that emits an intents JSON (mark_done etc.) dropped back into the loop at S0 as a micro-plan (GV re-checks criteria before honoring). Regenerated so new boards self-register."
+    }
+  ],
+  "modes": [
+    {
+      "id": "build",
+      "tier": "primary",
+      "selectWhen": "greenfield / new feature / MVP",
+      "understandWave": "system-architecture — must pass G2b-Ready before code dispatches",
+      "deliverables": [
+        "system-architecture",
+        "file-structure",
+        "db-schema",
+        "api-endpoints",
+        "ui-architecture",
+        "production-code"
+      ],
+      "leads": [
+        "orchestrator",
+        "designer",
+        "data",
+        "dev"
+      ],
+      "composes": [
+        "frontend",
+        "security",
+        "deploy"
+      ]
+    },
+    {
+      "id": "architect",
+      "tier": "primary",
+      "selectWhen": "scalable system / infrastructure design",
+      "understandWave": "system design — architecture, component structure, data flow, caching",
+      "deliverables": [
+        "system-architecture",
+        "component-structure",
+        "data-flow",
+        "api-design",
+        "db-schema",
+        "caching-strategy",
+        "production-code"
+      ],
+      "leads": [
+        "orchestrator",
+        "data",
+        "dev",
+        "devops"
+      ],
+      "composes": [
+        "deploy"
+      ]
+    },
+    {
+      "id": "audit",
+      "tier": "primary",
+      "selectWhen": "inherited / unfamiliar codebase; assess quality + scalability",
+      "understandWave": "reverse-engineer architecture + complete data flow — must complete before any change",
+      "deliverables": [
+        "clean-architecture-breakdown",
+        "critical-problem-areas",
+        "refactoring-strategies",
+        "improved-production-code"
+      ],
+      "constraints": [
+        "behavior-lock"
+      ],
+      "leads": [
+        "orchestrator",
+        "reviewer",
+        "dev",
+        "qa"
+      ],
+      "artifacts": [
+        "system-map"
+      ]
+    },
+    {
+      "id": "refactor",
+      "tier": "primary",
+      "selectWhen": "clean-architecture restructure of a messy codebase",
+      "understandWave": "map current structure + coupling",
+      "deliverables": [
+        "new-folder-structure",
+        "clean-architecture-breakdown",
+        "refactored-production-code",
+        "architectural-improvement-explanation"
+      ],
+      "constraints": [
+        "behavior-lock"
+      ],
+      "leads": [
+        "orchestrator",
+        "reviewer",
+        "dev",
+        "qa"
+      ]
+    },
+    {
+      "id": "optimize",
+      "tier": "primary",
+      "selectWhen": "performance / scale for high traffic",
+      "understandWave": "profile + identify bottlenecks",
+      "deliverables": [
+        "performance-issue-breakdown",
+        "optimization-strategies",
+        "improved-production-code",
+        "scalability-recommendations"
+      ],
+      "constraints": [
+        "behavior-lock"
+      ],
+      "leads": [
+        "dev",
+        "qa",
+        "devops"
+      ],
+      "gates": [
+        "G-nfr"
+      ]
+    },
+    {
+      "id": "debug",
+      "tier": "primary",
+      "selectWhen": "live failure / outage / broken behavior",
+      "understandWave": "reproduce + isolate + root-cause (never guess)",
+      "deliverables": [
+        "code-functionality-breakdown",
+        "root-cause-analysis",
+        "failure-explanation",
+        "edge-case-analysis",
+        "fixed-production-code"
+      ],
+      "constraints": [
+        "never-guess"
+      ],
+      "leads": [
+        "debugger"
+      ],
+      "subloop": "S-DEBUG",
+      "artifacts": [
+        "failures"
+      ]
+    },
+    {
+      "id": "plan",
+      "tier": "primary",
+      "selectWhen": "decide approach before building",
+      "understandWave": "clarify + challenge + tradeoffs (no code)",
+      "deliverables": [
+        "technical-decisions",
+        "tradeoff-analysis",
+        "recommended-architecture",
+        "implementation-plan"
+      ],
+      "constraints": [
+        "confer-first",
+        "prioritize-simplicity"
+      ],
+      "leads": [
+        "orchestrator",
+        "pm"
+      ]
+    },
+    {
+      "id": "frontend",
+      "tier": "lens",
+      "role": "designer",
+      "selectWhen": "UI-touching item",
+      "deliverables": [
+        "component-architecture",
+        "props-api-design",
+        "production-impl",
+        "usage-examples",
+        "best-practices"
+      ],
+      "gates": [
+        "G-nfr"
+      ]
+    },
+    {
+      "id": "security",
+      "tier": "lens",
+      "role": "security",
+      "selectWhen": "touches auth / data / external surface",
+      "deliverables": [
+        "vulnerability-report",
+        "severity-levels",
+        "attack-scenarios",
+        "secure-implementation-fixes",
+        "production-recommendations"
+      ],
+      "gates": [
+        "G2-arch-security-scope",
+        "G5-negative-authz"
+      ],
+      "artifacts": [
+        "blockers"
+      ],
+      "note": "security HAS VETO"
+    },
+    {
+      "id": "deploy",
+      "tier": "lens",
+      "role": "devops",
+      "selectWhen": "ship phase / deployment prep",
+      "deliverables": [
+        "infrastructure-architecture",
+        "deployment-workflow",
+        "ci-cd-pipeline",
+        "docker-k8s-setup",
+        "monitoring-strategy",
+        "production-deployment-checklist"
+      ],
+      "gates": [
+        "G5-smoke",
+        "G5.5-deploy-health",
+        "G-observability"
+      ]
+    }
+  ],
+  "_modes_doc": "Operating modes (see MODES.md). PRIMARY = pick one per plan (whole-task posture); LENS = attach as a phase of a primary mode (a posture on an existing role). Mode deliverables -> success_criteria (QA G4); the understandWave must complete (and pass G2b-Ready for create modes) before implementation dispatches; behavior-lock modes run G-behavior-lock. Selected at S2 -> LoopItem.mode. The tech-lead ethos is the orchestrator baseline across ALL modes.",
+  "operations": [
+    {
+      "id": "reconcile-sweep",
+      "kind": "operation",
+      "run": null,
+      "mode": "reasoning",
+      "active": true,
+      "invocation": [
+        "run the reconcile sweep",
+        "/reconcile-sweep"
+      ],
+      "composes": [
+        "G1-reconcile-sweep",
+        "G6-stale-orphan",
+        "G7-propagate",
+        "doc-stale-content-hash",
+        "plan-item-no-commit",
+        "broken-cite",
+        "orphan-anchor",
+        "unregistered-artifact",
+        "migration-no-model"
+      ],
+      "triggersFrom": "config.sweeps.reconcile.triggers",
+      "intent": "Doc + data currency operation (SWEEPS.md Op 1). Phase 0: discover + confirm anchor surfaces (seed config.sweeps.reconcile.anchors, glob for what config missed; report Found/Absent/Ambiguous; AskUserQuestion R.0). Phase A: grep anchor docs for stale wording + orphan/broken references + data orphans. Phase B: revise stale docs in lockstep via G7 (banner / targeted-edit / full-rewrite; dated change-log entry). Phase C: G6 surfaces orphans + dead data for BATCHED human disposition (R.C/R.D) — never auto-delete. COMPOSES the inbound G1 + the G6 stale/orphan + propagation family + G7; ADDS live discovery+confirm, the three revision shapes, data-orphan classes (flags/env/fixtures), and single-operation on-demand invocation. Auto-fires on the config triggers (new plan/ADR/decision, 'we locked X', canonical-doc revision bump, memory supersede) in the same session the decision lands."
+    },
+    {
+      "id": "verification-sweep",
+      "kind": "operation",
+      "run": null,
+      "mode": "reasoning",
+      "active": true,
+      "invocation": [
+        "run the verification sweep",
+        "verify the build before deploy",
+        "/verification-sweep"
+      ],
+      "composes": [
+        "GV-verify",
+        "G4-test-gap",
+        "G3-db-constraint",
+        "G3b-migration-safety",
+        "G5-smoke",
+        "G5-negative-authz",
+        "G5.5-deploy-health",
+        "G-e2e",
+        "G-behavior-lock",
+        "readiness"
+      ],
+      "triggersFrom": "config.sweeps.verification.triggers",
+      "intent": "Functional-correctness operation (SWEEPS.md Op 2). Phase 0: discover build/test surface + confirm target env (config.sweeps.verification.target) + acceptance source (V.0). Phases A static -> B schema -> C service -> D end-to-end -> E regression, SKIPPING phases listed in config.sweeps.verification.phasesNA (an absent surface the repo SHOULD have is a GAP finding, never a silent skip). Phase D routes through config.sweeps.verification.functionalVia (a checked-in e2e suite, or a human-in-tool sensor role via the playtest-handoff contract for repos verified only inside an external editor/viewport). Emits ONE ship verdict — READY / READY-WITH-NOTES / HOLD — via readiness min() across the phases run. Run at EACH commit boundary of a multi-slice change, not only at the end. COMPOSES GV/G4/G3b/G5/G5.5/G-e2e/G-behavior-lock + readiness; ADDS the unified verdict, between-slices cadence, and the no-surface-is-the-finding rule."
+    }
+  ]
+}

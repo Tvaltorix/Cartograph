@@ -1,0 +1,161 @@
+{
+  "version": "0.3.0",
+  "engine": "valtor",
+  "home": ".agents/valtor",
+  "masterContext": "docs/PROJECT_PACKET.md",
+  "planRefine": {
+    "enabled": true,
+    "skill": "refine-prompt",
+    "checklist": "docs/plans/001-cartograph-mvp.md",
+    "conferOnAmbiguity": true,
+    "batchAsks": true
+  },
+  "council": { "enabled": false, "seats": [], "max_rounds": 0, "precedence": [] },
+  "artifacts": { "enabled": false },
+  "game": { "enabled": false },
+  "humanInteraction": {
+    "mode": "confer",
+    "quickpickFor": ["trivial-binary-confirmation"],
+    "briefEndsWithRecapMenu": true,
+    "onConverge": "log-and-proceed",
+    "recordTo": "decisions-ledger",
+    "graduateStandingTo": ["ADR", "memory"]
+  },
+  "index": {
+    "path": ".agents/valtor/index/valtor.sqlite",
+    "exports": [
+      ".agents/valtor/index/items.jsonl",
+      ".agents/valtor/index/gate_results.jsonl",
+      ".agents/valtor/index/status_transitions.jsonl",
+      ".agents/valtor/index/decisions.jsonl",
+      ".agents/valtor/index/failures.jsonl",
+      ".agents/valtor/index/plans.jsonl",
+      ".agents/valtor/index/edges.jsonl",
+      ".agents/valtor/index/contracts.jsonl",
+      ".agents/valtor/index/concerns.jsonl"
+    ],
+    "runJournal": ".agents/valtor/index/run-journal.jsonl",
+    "rebuildFromExport": true
+  },
+  "lock": {
+    "path": ".agents/valtor/index/valtor.lock",
+    "staleAfter": "30m"
+  },
+  "budget": {
+    "perItemMaxRetries": 3,
+    "perItemDebugIterations": 3,
+    "maxDeployAttemptsPerItem": 1,
+    "maxGVRetriesPerItem": 3,
+    "reproduceAttempts": 3,
+    "maxNoProgressCycles": 2,
+    "perWaveWallClockMinutes": 90,
+    "totalSessionTokenCeiling": null,
+    "onExceed": "HALT-ASK"
+  },
+  "gitPolicy": {
+    "defaultBranch": "main",
+    "requireBranchOffDefault": false,
+    "branchPrefix": "loop/",
+    "neverForcePush": true,
+    "selfEditRequiresSeparateCommit": true,
+    "mergeToMainAt": "S11",
+    "openPr": false
+  },
+  "reconcileSweep": {
+    "targets": ["AGENTS.md", "docs/**/*.md"],
+    "skip": ["artifacts/**"],
+    "blockOn": "contradiction",
+    "autoFix": "cosmetic-drift"
+  },
+  "conflictZones": {
+    "paths": ["pyproject.toml", "src/cartograph/model.py", "viewer/index.html", "docs/PROJECT_PACKET.md"],
+    "autoComputeFrom": "import-graph + CI fan-in"
+  },
+  "archGates": {
+    "languagePolicy": {
+      "adr": "docs/ARCHITECTURE.md",
+      "default": "Python 3.11 backend; browser-native JavaScript viewer",
+      "exceptions": ["Node ESM for portable Valtor scripts"],
+      "newLanguageRequiresAdr": true
+    },
+    "phaseBoundary": {
+      "authority": "docs/plans/001-cartograph-mvp.md",
+      "scopeCreepIsTopRisk": true,
+      "phase1": ["Python and FastMCP extraction", "local viewer", "read-only subjects"],
+      "phase2": ["additional languages", "runtime tracing", "hosted collaboration"]
+    },
+    "logging": {
+      "noPii": true,
+      "required": ["project alias", "scan digest", "result counts"]
+    }
+  },
+  "dbConstraintPrinciple": { "enabled": false },
+  "dataSafety": {
+    "realDataTables": [],
+    "requireDownMigration": false,
+    "migrateBeforeDeploy": false
+  },
+  "extractors": {
+    "pythonModules": { "glob": "**/*.py" },
+    "fastMcp": { "glob": "**/*.py", "pattern": "@<server>.(tool|resource|prompt)" }
+  },
+  "deployGates": {
+    "smokeTest": "scripts/smoke.ps1",
+    "negativeAuthz": null,
+    "ciWorkflow": ".github/workflows/ci.yml",
+    "oneDeployAtATime": true,
+    "autoDetect": true,
+    "scaffoldIfAbsent": false,
+    "notifyOutcomeToChat": true,
+    "rollback": { "strategy": "git-revert", "lastGreenRef": "auto", "freezeWaveOnRed": true }
+  },
+  "readinessModel": {
+    "dimensions": ["BUILD", "TEST", "INTEGRATION", "DEMO-READY", "SECURITY-CLEAR"],
+    "overall": "min"
+  },
+  "priorityWeights": { "sortKey": ["severity", "priority"], "withinDependencyLevel": true },
+  "domainMap": {
+    "core": ["src/cartograph/**"],
+    "viewer": ["viewer/**"],
+    "verification": ["tests/**", "scripts/**"]
+  },
+  "anticipatedQa": {
+    "lenses": ["stakeholder", "skeptic"],
+    "firesOn": ["phase-completion", "on-demand"],
+    "learn": true,
+    "concernsLedger": ".agents/valtor/index/concerns.jsonl"
+  },
+  "stakeholders": [
+    { "id": "developer", "who": "developer", "cares": ["truthful health", "readable dependencies"] },
+    { "id": "agent", "who": "AI coding agent", "cares": ["bounded queries", "provenance", "freshness"] }
+  ],
+  "uiBar": {
+    "density": "overview first, progressive detail",
+    "status": "gray/green/yellow/red fill plus purple structural overlay",
+    "layout": "deterministic semantic lanes; no unstable force layout"
+  },
+  "nfrBudgets": { "a11yLevel": "WCAG-AA" },
+  "map": {
+    "blastRadiusDepth": 3,
+    "sharedNodeKinds": ["module", "mcp_server", "database", "external_dep"],
+    "renderInWaveSummary": true,
+    "provenanceEdges": true,
+    "requireSeams": ["pythonModules", "fastMcp"],
+    "optionalSeams": []
+  },
+  "blockerStaleHours": 48,
+  "propagation": {
+    "claudeMd": "CLAUDE.md",
+    "adrDir": "docs/",
+    "timeline": "docs/plans/001-cartograph-mvp.md",
+    "failures": ".agents/valtor/index/failures.jsonl",
+    "stateDir": ".agents/valtor/index/",
+    "systemMap": ".agents/valtor/system-map.md",
+    "memory": true
+  },
+  "done": {
+    "tier": "plan-complete+repo-healthy",
+    "autoUpgradeWhenRegistered": { "deployGateActive": "plan+repo-healthy+ci-green" },
+    "reentrant": true
+  }
+}
