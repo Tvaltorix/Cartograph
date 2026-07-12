@@ -7,6 +7,15 @@ const gapsOnly = document.getElementById("gaps-only");
 const plagueOnly = document.getElementById("plague-only");
 const fileInput = document.getElementById("file-input");
 const exportButton = document.getElementById("export-button");
+const newProjectButton = document.getElementById("new-project-button");
+const projectSelect = document.getElementById("project-select");
+const refreshButton = document.getElementById("refresh-button");
+const onboardingDialog = document.getElementById("onboarding-dialog");
+const onboardingForm = document.getElementById("onboarding-form");
+const cancelOnboarding = document.getElementById("cancel-onboarding");
+const projectPrivacy = document.getElementById("project-privacy");
+const privacyDescription = document.getElementById("privacy-description");
+const onboardingError = document.getElementById("onboarding-error");
 let graph = null;
 let selectedId = null;
 
@@ -41,6 +50,43 @@ function renderDetails(node) {
 
 function escapeHtml(value) {
   return String(value).replace(/[&<>'"]/g, char => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;"})[char]);
+}
+
+function setGraph(value) {
+  graph = value;
+  selectedId = null;
+  render();
+}
+
+async function requestJson(url, options = {}) {
+  const response = await fetch(url, options);
+  const payload = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(payload.error || `HTTP ${response.status}`);
+  return payload;
+}
+
+async function loadProjects(preferred = graph?.project) {
+  try {
+    const payload = await requestJson("/api/projects");
+    projectSelect.replaceChildren(new Option("Reference export", ""));
+    payload.projects.forEach(project => {
+      const freshness = project.scanned_at ? "" : project.graph_digest ? " · scan time unknown" : " · not scanned";
+      projectSelect.add(new Option(`${project.project} · ${project.privacy}${freshness}`, project.project));
+    });
+    projectSelect.disabled = false;
+    const match = payload.projects.find(project => project.project.toLowerCase() === String(preferred || "").toLowerCase());
+    projectSelect.value = match?.project || "";
+    refreshButton.disabled = !projectSelect.value;
+  } catch {
+    projectSelect.disabled = true;
+    refreshButton.disabled = true;
+  }
+}
+
+async function loadStoredProject(project) {
+  setGraph(await requestJson(`/api/projects/${encodeURIComponent(project)}/graph`));
+  projectSelect.value = project;
+  refreshButton.disabled = false;
 }
 
 function render() {
@@ -93,8 +139,9 @@ function render() {
   summary.value = `${graph.project} · ${nodes.length}/${graph.nodes.length} nodes · ${edges.length} links`;
   summary.textContent = summary.value;
   if (selectedId && !ids.has(selectedId)) {
-    selectedId = null;
     details.innerHTML = '<p class="eyebrow">Selection</p><h2>Filtered out</h2><p>Change the filters to restore the selected node.</p>';
+  } else if (selectedId) {
+    renderDetails(graph.nodes.find(node => node.id === selectedId));
   }
 }
 
@@ -110,8 +157,7 @@ async function loadDefault() {
   try {
     const response = await fetch(source);
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
-    graph = await response.json();
-    render();
+    setGraph(await response.json());
   } catch (error) {
     summary.textContent = "Open a Cartograph JSON export to begin";
     empty.hidden = false;
@@ -123,9 +169,9 @@ async function loadDefault() {
 fileInput.addEventListener("change", async () => {
   const [file] = fileInput.files;
   if (!file) return;
-  graph = JSON.parse(await file.text());
-  selectedId = null;
-  render();
+  setGraph(JSON.parse(await file.text()));
+  projectSelect.value = "";
+  refreshButton.disabled = true;
 });
 exportButton.addEventListener("click", () => {
   if (!graph) return;
@@ -138,4 +184,61 @@ exportButton.addEventListener("click", () => {
   link.click();
   URL.revokeObjectURL(link.href);
 });
-loadDefault();
+projectSelect.addEventListener("change", async () => {
+  if (projectSelect.value) await loadStoredProject(projectSelect.value);
+  else await loadDefault();
+});
+refreshButton.addEventListener("click", async () => {
+  if (!projectSelect.value) return;
+  refreshButton.disabled = true;
+  try {
+    await requestJson(`/api/projects/${encodeURIComponent(projectSelect.value)}/scan`, {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: "{}",
+    });
+    await loadStoredProject(projectSelect.value);
+    await loadProjects(projectSelect.value);
+  } finally {
+    refreshButton.disabled = false;
+  }
+});
+newProjectButton.addEventListener("click", () => {
+  onboardingError.textContent = "";
+  onboardingDialog.showModal();
+});
+cancelOnboarding.addEventListener("click", () => onboardingDialog.close());
+projectPrivacy.addEventListener("change", () => {
+  privacyDescription.textContent = {
+    "shared": "Whisper indexes semantic project documents and enables persistent Codex/Claude handoffs. Source code remains local to Cartograph.",
+    "map-only": "Cartograph maps the code locally. Whisper receives no project documents or checkpoints.",
+    "private": "Cartograph maps the code locally and Whisper explicitly refuses project context, search, and checkpoints.",
+  }[projectPrivacy.value];
+});
+onboardingForm.addEventListener("submit", async event => {
+  event.preventDefault();
+  onboardingError.textContent = "";
+  const submit = onboardingForm.querySelector('button[type="submit"]');
+  submit.disabled = true;
+  const form = new FormData(onboardingForm);
+  try {
+    const result = await requestJson("/api/onboard", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({path: form.get("path"), name: form.get("name") || null, privacy: form.get("privacy")}),
+    });
+    onboardingDialog.close();
+    onboardingForm.reset();
+    projectPrivacy.dispatchEvent(new Event("change"));
+    await loadProjects(result.project);
+    await loadStoredProject(result.project);
+  } catch (error) {
+    onboardingError.textContent = error.message;
+  } finally {
+    submit.disabled = false;
+  }
+});
+(async () => {
+  await loadDefault();
+  await loadProjects();
+})();

@@ -1,57 +1,73 @@
-# Client setup and task injection
+# Onboard once, start every chat
 
-Cartograph is useful outside its own repository because the MCP server keeps a
-local project registry. The registry stores machine paths in the user's ignored
-SQLite database; MCP responses and committed graph exports omit them.
+The normal workflow has two concepts.
 
-## Codex
+## 1. Onboard a project once
 
-Install the server for all Codex repositories:
+For a project whose semantic documents and handoffs may be shared between
+Codex and Claude Code:
+
+```powershell
+cartograph onboard . --shared
+```
+
+For a local graph with no Whisper project context:
+
+```powershell
+cartograph onboard .
+```
+
+For a personal project that Whisper must explicitly refuse:
+
+```powershell
+cartograph onboard . --private
+```
+
+The project name defaults to the folder name. Use `--name <alias>` only when a
+different stable alias is useful. The same choices are available through **New
+project** in the viewer.
+
+| Mode | Cartograph graph | Whisper doctrine | Indexed handoffs/context |
+|---|---:|---:|---:|
+| shared | yes | yes | yes |
+| map-only | yes | yes | no |
+| private | yes | doctrine only | explicitly denied |
+
+## 2. Start substantial work
+
+In Codex:
+
+```text
+$start
+```
+
+In Claude Code:
+
+```text
+/start
+```
+
+`start` internally refreshes the graph, applies the stored privacy mode, loads
+one bounded Whisper injection when allowed, checks gaps and structural plague,
+and returns one compact re-entry brief. Users do not need to choose between
+principles, protocol, handoff, pack, or injection commands.
+
+## Another machine
+
+Install Cartograph's stdio MCP server at user scope, then install the `start`
+skill from `skills/start` for Codex and `.claude/skills/start` for Claude Code:
 
 ```powershell
 codex mcp add cartograph -- C:\path\to\Cartograph\.venv\Scripts\cartograph-mcp.exe
-```
-
-Start a new Codex session after adding it. The portable bootstrap skill is
-`skills/cartograph-bootstrap/SKILL.md`; install it in the user's skills folder
-and invoke `$cartograph-bootstrap` at the beginning of substantial work.
-
-## Claude Code
-
-Install the same stdio server at user scope:
-
-```powershell
 claude mcp add --scope user cartograph -- C:\path\to\Cartograph\.venv\Scripts\cartograph-mcp.exe
 ```
 
-Install `.claude/skills/cartograph-bootstrap/SKILL.md` in the user skills
-folder. Invoke `/cartograph-bootstrap` when beginning or resuming work.
+The registry database and Whisper sharing policy remain machine-local. Graph
+exports contain relative paths and evidence metadata, never registered roots or
+source bodies.
 
-## First registration
+## Advanced operations
 
-Each project is registered once, then rescanned explicitly when its code
-changes:
-
-```powershell
-cartograph register --name MyProject --path C:\path\to\MyProject
-cartograph scan --name MyProject
-```
-
-The bootstrap combines two layers instead of replacing Whisper:
-
-1. Whisper supplies curated operating principles, semantic handoffs, and
-   cross-agent continuity.
-2. Cartograph supplies current, digest-bound code structure, gaps, dependencies,
-   and mechanical structural warnings.
-
-Git history remains evidence of changes, not the context database. A new chat
-does not inherit another chat's hidden transcript; it reconstructs a bounded
-working state from Whisper plus Cartograph.
-
-## Refresh model
-
-The MVP uses explicit scans. This avoids a permanent watcher and prevents
-unreviewed filesystem activity. A commit hook or Valtor phase gate can call
-`cartograph scan --name <alias>` after tests. Runtime tracing and webhook-driven
-refresh are future adapters and must preserve digest binding and read-only
-subject access.
+`register`, `scan`, `project_status`, `inject_context`, and the other bounded
+tools remain available for debugging and automation. They are implementation
+primitives, not the normal user workflow.

@@ -7,12 +7,13 @@ from mcp.types import ToolAnnotations
 
 from .analysis import bounded_neighbors, shortest_path
 from .extract import scan_project
+from .onboarding import onboard_project
 from .store import DEFAULT_DB, GraphStore
 
 
 mcp = FastMCP(
     "Cartograph",
-    instructions="Query bounded, evidence-bound codebase graphs. Register and scan projects explicitly before querying.",
+    instructions="Onboard projects once, then query bounded, evidence-bound codebase graphs.",
 )
 READ_ONLY = ToolAnnotations(readOnlyHint=True, destructiveHint=False, idempotentHint=True)
 LOCAL_WRITE = ToolAnnotations(readOnlyHint=False, destructiveHint=False, idempotentHint=True)
@@ -23,17 +24,30 @@ def _store() -> GraphStore:
 
 
 @mcp.tool(annotations=LOCAL_WRITE)
-def project_register(project: str, path: str) -> dict[str, str | bool]:
+def project_register(project: str, path: str, privacy: str = "map-only") -> dict[str, str | bool]:
     """Register a local project root. Absolute paths remain only in the local ignored database."""
     with _store() as store:
-        return store.register(project, path)
+        return store.register(project, path, privacy)
+
+
+@mcp.tool(annotations=LOCAL_WRITE)
+def project_onboard(
+    path: str,
+    project: str | None = None,
+    privacy: str = "map-only",
+    whisper_root: str | None = None,
+) -> dict[str, Any]:
+    """Register, apply the explicit Whisper privacy policy, and scan a project in one operation."""
+    with _store() as store:
+        return onboard_project(store, path, project, privacy, whisper_root=whisper_root)
 
 
 @mcp.tool(annotations=LOCAL_WRITE)
 def project_scan(project: str, declarations: str | None = None) -> dict[str, Any]:
     """Explicitly rescan a registered project and store its current sanitized graph."""
     with _store() as store:
-        graph = scan_project(store.project_root(project), project, declarations)
+        declaration_path = declarations or store.project_declarations(project)
+        graph = scan_project(store.project_root(project), project, declaration_path)
         store.save_graph(project, graph)
     return {"project": project, "graph_digest": graph["graph_digest"], **graph["summary"]}
 

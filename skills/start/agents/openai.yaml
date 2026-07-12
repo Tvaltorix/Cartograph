@@ -1,0 +1,4 @@
+interface:
+  display_name: "Start"
+  short_description: "Resume project context with one command"
+  default_prompt: "Use $start to load the current project handoff, graph risks, and next verified action."

@@ -21,17 +21,16 @@ are rebuildable projections, not sources of truth.
 python -m venv .venv
 .\.venv\Scripts\python.exe -m pip install -e ".[dev]"
 .\.venv\Scripts\python.exe -m pytest
-.\.venv\Scripts\cartograph.exe register --name example --path C:\path\to\repo
-.\.venv\Scripts\cartograph.exe scan --name example --output graph.json
+.\.venv\Scripts\cartograph.exe onboard C:\path\to\repo --shared
 .\.venv\Scripts\cartograph.exe serve
 ```
 
 The first reference subject is Whisper's two MCP servers. See
 `docs/plans/001-cartograph-mvp.md`.
 
-Open `http://127.0.0.1:8765/viewer/` after starting the server. Client-wide MCP
-and `$cartograph-bootstrap` / `/cartograph-bootstrap` setup is documented in
-`docs/CLIENT_SETUP.md`.
+Open `http://127.0.0.1:8765/viewer/` after starting the server. Use **New
+project** there or `cartograph onboard .` once, then `$start` in Codex or
+`/start` in Claude Code. See `docs/CLIENT_SETUP.md`.
 
 ## Project structure
 

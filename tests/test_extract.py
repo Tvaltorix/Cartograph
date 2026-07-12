@@ -62,6 +62,19 @@ def test_unresolved_relative_import_is_a_red_gap(tmp_path: Path) -> None:
     assert gaps[0]["status"] == "red"
 
 
+def test_package_initializer_relative_import_resolves_inside_package(tmp_path: Path) -> None:
+    package = tmp_path / "pkg"
+    package.mkdir()
+    (package / "__init__.py").write_text("from .module import VALUE\n", encoding="utf-8")
+    (package / "module.py").write_text("VALUE = 1\n", encoding="utf-8")
+    graph = scan_project(tmp_path, "package")
+    assert not [node for node in graph["nodes"] if node["gap"]]
+    assert any(
+        edge["source"] == "module:pkg" and edge["target"] == "module:pkg.module"
+        for edge in graph["edges"]
+    )
+
+
 def test_cycle_disappears_when_dependency_is_removed(tmp_path: Path) -> None:
     declarations = _fixture(tmp_path)
     before = scan_project(tmp_path, "fixture", declarations)

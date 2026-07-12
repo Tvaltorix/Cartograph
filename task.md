@@ -10,3 +10,12 @@
 - [x] Export the sanitized Whisper MCP example.
 - [x] Pass unit, protocol, determinism, privacy, smoke, and browser checks.
 - [x] Record Valtor gates, commit, and push only Cartograph.
+
+## Onboarding and start
+
+- [x] Implement shared, map-only, and private onboarding policies.
+- [x] Add `cartograph onboard .` and `project_onboard` MCP support.
+- [x] Add the loopback project API and viewer onboarding flow.
+- [x] Create `$start` and `/start` as the only user-facing injection command.
+- [x] Verify CLI, API, MCP, privacy, browser, and CI behavior.
+- [ ] Commit and push onboarding changes only to Cartograph.

@@ -3,7 +3,9 @@
 ## Pipeline
 
 ```text
-explicit project registration
+explicit onboarding + privacy policy
+        -> local Cartograph registration
+        -> optional Whisper enrollment/denial
         -> safe file inventory
         -> per-file digest + extractor
         -> canonical nodes/edges/evidence
@@ -20,8 +22,10 @@ explicit project registration
 3. `analysis`: resolution, status, gaps, strongly connected components, plague.
 4. `layout`: stable coordinates based on semantic lanes and sorted identity.
 5. `store`: local project registry and current graph projection.
-6. `mcp_server`: bounded model-controlled queries and explicit mutations.
-7. `viewer`: human inspection of the same exported graph.
+6. `onboarding`: one canonical alias and explicit shared/map-only/private policy.
+7. `mcp_server`: bounded model-controlled queries and explicit mutations.
+8. `web`: same-origin loopback API for project onboarding, switching, and refresh.
+9. `viewer`: human inspection of the same exported graph.
 
 ## Provenance
 
@@ -41,3 +45,6 @@ scan never replaces the last complete generation; consumers see it as stale.
 Registration is explicit. Scans reject paths outside the registered root,
 outside-root symlinks, sensitive filenames, large files, and excluded trees.
 Exports use relative POSIX paths and omit source bodies and absolute roots.
+The viewer API binds to `127.0.0.1`, accepts JSON writes only, caps request
+size, and never returns registered roots. Whisper enrollment changes only its
+gitignored machine-local source policy; subject repositories remain unchanged.

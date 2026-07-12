@@ -25,6 +25,7 @@ h2 { font-size: 1.25rem; overflow-wrap: anywhere; }
 .header-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
 .file-button, button { display: inline-flex; padding: 10px 14px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface-raised); color: var(--text); font: inherit; cursor: pointer; }
 .file-button:hover, button:hover:not(:disabled) { border-color: var(--focus); }
+button.primary { background: var(--focus); border-color: var(--focus); color: #07111c; font-weight: 700; }
 button:disabled { color: var(--muted); cursor: not-allowed; opacity: .6; }
 .file-button input { position: absolute; inline-size: 1px; block-size: 1px; overflow: hidden; clip-path: inset(50%); }
 .toolbar { min-height: 64px; display: flex; align-items: center; flex-wrap: wrap; gap: 20px; border-bottom: 1px solid var(--line); }
@@ -46,6 +47,16 @@ button:focus-visible, input:focus-visible, select:focus-visible, .file-button:fo
 #details dl { display: grid; grid-template-columns: 80px 1fr; gap: 8px; margin: 0; }
 #details dt { color: var(--muted); }
 #details dd { margin: 0; overflow-wrap: anywhere; }
+.dialog-field { display: grid; gap: 6px; color: var(--muted); }
+.dialog-field span { font-size: .8rem; }
+.dialog-field input, .dialog-field select { width: 100%; border: 1px solid var(--line); border-radius: 6px; background: var(--bg); color: var(--text); padding: 10px; font: inherit; }
+.dialog-note { color: var(--muted); font-size: .85rem; }
+.dialog-error { min-height: 1.5em; color: var(--red); }
+.dialog-actions { display: flex; justify-content: flex-end; gap: 8px; }
+dialog { width: min(520px, calc(100% - 24px)); border: 1px solid var(--line); border-radius: 12px; background: var(--surface); color: var(--text); padding: 24px; }
+dialog::backdrop { background: rgb(3 8 14 / 78%); }
+dialog form { display: grid; gap: 18px; }
+dialog h2 { margin-bottom: 0; }
 .status-word { text-transform: capitalize; }
 .lane-label { fill: var(--muted); font-size: 12px; letter-spacing: .08em; text-transform: uppercase; }
 .edge { fill: none; stroke: var(--line); stroke-width: 1.5; }

@@ -44,8 +44,14 @@ def _python_files(root: Path) -> list[Path]:
     return sorted(files, key=lambda item: item.relative_to(root).as_posix())
 
 
-def _resolve_from(current: str, level: int, module: str | None, name: str | None = None) -> str:
-    package = current.split(".")[:-1]
+def _resolve_from(
+    current: str,
+    level: int,
+    module: str | None,
+    name: str | None = None,
+    package_initializer: bool = False,
+) -> str:
+    package = current.split(".") if package_initializer else current.split(".")[:-1]
     package = package[: max(0, len(package) - level + 1)]
     parts = package + ([module] if module else []) + ([name] if name else [])
     return ".".join(part for part in parts if part)
@@ -104,7 +110,16 @@ def scan_project(root: str | Path, project: str | None = None, declarations: str
                 if item.level:
                     for alias in item.names:
                         imported_module = item.module or (None if alias.name == "*" else alias.name)
-                        import_requests.append((module, _resolve_from(module, item.level, imported_module), True))
+                        import_requests.append((
+                            module,
+                            _resolve_from(
+                                module,
+                                item.level,
+                                imported_module,
+                                package_initializer=modules[module].name == "__init__.py",
+                            ),
+                            True,
+                        ))
                 elif item.module:
                     import_requests.append((module, item.module, False))
             elif isinstance(item, (ast.Assign, ast.AnnAssign)):

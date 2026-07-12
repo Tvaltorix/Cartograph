@@ -14,12 +14,19 @@
       <h1>Cartograph</h1>
     </div>
     <div class="header-actions">
+      <button id="new-project-button" class="primary" type="button">New project</button>
       <button id="export-button" type="button" disabled>Export graph</button>
       <label class="file-button">Open graph<input id="file-input" type="file" accept="application/json,.json"></label>
     </div>
   </header>
   <main>
     <section class="toolbar" aria-label="Graph controls">
+      <label>Project
+        <select id="project-select" disabled>
+          <option value="">Reference export</option>
+        </select>
+      </label>
+      <button id="refresh-button" type="button" disabled>Refresh</button>
       <label>Status
         <select id="status-filter">
           <option value="all">All</option>
@@ -55,6 +62,31 @@
       </aside>
     </section>
   </main>
+  <dialog id="onboarding-dialog" aria-labelledby="onboarding-title">
+    <form id="onboarding-form">
+      <p class="eyebrow">One-time setup</p>
+      <h2 id="onboarding-title">Onboard a project</h2>
+      <label class="dialog-field">Project folder
+        <input id="project-path" name="path" type="text" placeholder="C:\path\to\project" required>
+      </label>
+      <label class="dialog-field">Project name <span>(optional)</span>
+        <input id="project-name" name="name" type="text" placeholder="Uses the folder name">
+      </label>
+      <label class="dialog-field">Context privacy
+        <select id="project-privacy" name="privacy">
+          <option value="map-only">Map only — no Whisper project context</option>
+          <option value="shared">Shared brain — Codex/Claude handoffs</option>
+          <option value="private">Private — explicitly block Whisper</option>
+        </select>
+      </label>
+      <p id="privacy-description" class="dialog-note">Cartograph maps the code locally. Whisper receives no project documents or checkpoints.</p>
+      <output id="onboarding-error" class="dialog-error" aria-live="polite"></output>
+      <div class="dialog-actions">
+        <button id="cancel-onboarding" type="button">Cancel</button>
+        <button class="primary" type="submit">Onboard and scan</button>
+      </div>
+    </form>
+  </dialog>
   <script src="app.js"></script>
 </body>
 </html>
