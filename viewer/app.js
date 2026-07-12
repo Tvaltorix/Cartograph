@@ -6,6 +6,7 @@ const statusFilter = document.getElementById("status-filter");
 const gapsOnly = document.getElementById("gaps-only");
 const plagueOnly = document.getElementById("plague-only");
 const fileInput = document.getElementById("file-input");
+const exportButton = document.getElementById("export-button");
 let graph = null;
 let selectedId = null;
 
@@ -44,6 +45,7 @@ function escapeHtml(value) {
 
 function render() {
   if (!graph) return;
+  exportButton.disabled = false;
   svg.replaceChildren(svg.querySelector("title"), svg.querySelector("desc"));
   const nodes = graph.nodes.filter(visible);
   const ids = new Set(nodes.map(node => node.id));
@@ -124,5 +126,16 @@ fileInput.addEventListener("change", async () => {
   graph = JSON.parse(await file.text());
   selectedId = null;
   render();
+});
+exportButton.addEventListener("click", () => {
+  if (!graph) return;
+  const project = String(graph.project || "cartograph").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+  const digest = String(graph.graph_digest || "export").slice(0, 8);
+  const blob = new Blob([`${JSON.stringify(graph, null, 2)}\n`], {type: "application/json"});
+  const link = document.createElement("a");
+  link.href = URL.createObjectURL(blob);
+  link.download = `${project || "cartograph"}-${digest}.graph.json`;
+  link.click();
+  URL.revokeObjectURL(link.href);
 });
 loadDefault();

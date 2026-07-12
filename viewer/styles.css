@@ -22,14 +22,16 @@ h1, h2, p { margin-top: 0; }
 h1 { margin-bottom: 0; font-size: clamp(2rem, 4vw, 3.4rem); letter-spacing: -0.05em; }
 h2 { font-size: 1.25rem; overflow-wrap: anywhere; }
 .eyebrow { margin-bottom: 4px; color: var(--muted); font-size: .75rem; letter-spacing: .12em; text-transform: uppercase; }
-.file-button { display: inline-flex; padding: 10px 14px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface-raised); cursor: pointer; }
-.file-button:hover { border-color: var(--focus); }
+.header-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+.file-button, button { display: inline-flex; padding: 10px 14px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface-raised); color: var(--text); font: inherit; cursor: pointer; }
+.file-button:hover, button:hover:not(:disabled) { border-color: var(--focus); }
+button:disabled { color: var(--muted); cursor: not-allowed; opacity: .6; }
 .file-button input { position: absolute; inline-size: 1px; block-size: 1px; overflow: hidden; clip-path: inset(50%); }
 .toolbar { min-height: 64px; display: flex; align-items: center; flex-wrap: wrap; gap: 20px; border-bottom: 1px solid var(--line); }
 .toolbar label { display: flex; align-items: center; gap: 8px; color: var(--muted); }
 select { border: 1px solid var(--line); border-radius: 6px; background: var(--surface); color: var(--text); padding: 7px 28px 7px 9px; }
 input, select { accent-color: var(--focus); }
-input:focus-visible, select:focus-visible, .file-button:focus-within { outline: 2px solid var(--focus); outline-offset: 2px; }
+button:focus-visible, input:focus-visible, select:focus-visible, .file-button:focus-within { outline: 2px solid var(--focus); outline-offset: 2px; }
 #summary { margin-left: auto; color: var(--muted); }
 .legend { min-height: 52px; display: flex; align-items: center; flex-wrap: wrap; gap: 18px; color: var(--muted); font-size: .82rem; }
 .legend span { display: inline-flex; align-items: center; gap: 7px; }
