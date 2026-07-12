@@ -18,4 +18,4 @@
 - [x] Add the loopback project API and viewer onboarding flow.
 - [x] Create `$start` and `/start` as the only user-facing injection command.
 - [x] Verify CLI, API, MCP, privacy, browser, and CI behavior.
-- [ ] Commit and push onboarding changes only to Cartograph.
+- [x] Commit and push onboarding changes only to Cartograph.
